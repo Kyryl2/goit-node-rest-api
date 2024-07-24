@@ -1,50 +1,132 @@
-import ctrlWrapper from "../decorators/ctrlWrapper.js";
-import HttpError from "../helpers/HttpError.js";
-import * as contactsServices from "../services/contactsServices.js";
+import * as contactService from "../services/contactsService.js";
 
-const getAllContacts = async (req, res, next) => {
-  const contacts = await contactsServices.listContacts();
-  res.json({
-    status: 200,
-    message: "Contacts get successfully",
-    contacts,
-  });
-};
+export const getAllContacts = async (req, res, next) => {
+  try {
+    const listedContacts = await contactService.getAllContacts();
 
-const getOneContact = async (req, res, next) => {
-  const contact = await contactsServices.getContactById(req.params.id);
-  if (!contact) {
-    throw HttpError(404, "Not found");
+    if (!listedContacts || listedContacts.length === 0) {
+      return res.status(404).json({
+        code: 404,
+        status: "Contacts not found",
+      });
+    }
+
+    res.status(200).json({
+      code: 200,
+      status: "Success",
+      data: { contacts: listedContacts },
+    });
+  } catch (err) {
+    next(err);
   }
-  res.status(200).json(contact);
 };
 
-const deleteContact = async (req, res, next) => {
-  const removedContact = await contactsServices.removeContact(req.params.id);
-  if (!removedContact) {
-    throw HttpError(404, "Not found");
+export const getOneContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const foundContact = await contactService.getOneContact(id);
+
+    if (!foundContact) {
+      return res.status(404).json({
+        code: 404,
+        status: "Contact not found",
+      });
+    }
+
+    res.status(200).json({
+      code: 200,
+      status: "Success",
+      data: { contact: foundContact },
+    });
+  } catch (err) {
+    next(err);
   }
-  res.status(200).json(removedContact);
 };
 
-const createContact = async (req, res, next) => {
-  const { name, email, phone } = req.body;
-  const newContact = await contactsServices.addContact(name, email, phone);
-  res.status(201).json(newContact);
-};
+export const deleteContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const removedContact = await contactService.deleteContact(id);
 
-const updateContact = async (req, res, next) => {
-  const { id } = req.params;
-  const updatedContact = await contactsServices.updateContact(id, req.body);
-  if (!updatedContact) {
-    throw HttpError(404, "Not found");
+    if (!removedContact) {
+      return res.status(404).json({
+        code: 404,
+        status: "Contact not found",
+      });
+    }
+
+    res.status(200).json({
+      code: 200,
+      status: "Success",
+      data: { contact: removedContact },
+    });
+  } catch (err) {
+    next(err);
   }
-  res.status(200).json(updatedContact);
 };
-export default {
-  getAllContacts: ctrlWrapper(getAllContacts),
-  getOneContact: ctrlWrapper(getOneContact),
-  deleteContact: ctrlWrapper(deleteContact),
-  createContact: ctrlWrapper(createContact),
-  updateContact: ctrlWrapper(updateContact),
+
+export const createContact = async (req, res, next) => {
+  try {
+    const { name, email, phone, favorite } = req.body;
+    const createdContact = await contactService.createContact(
+      name,
+      email,
+      phone,
+      favorite
+    );
+
+    res.status(201).json({
+      code: 201,
+      status: "Success",
+      data: { contact: createdContact },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+    const updatedContact = await contactService.updateContact(id, updates);
+
+    if (!updatedContact) {
+      return res.status(404).json({
+        code: 404,
+        status: "Contact not found",
+      });
+    }
+
+    res.status(200).json({
+      code: 200,
+      status: "Success",
+      data: { contact: updatedContact },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const patchContact = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { favorite } = req.body;
+    const patchedContact = await contactService.patchContact(id, favorite);
+
+    if (!patchedContact) {
+      return res.status(404).json({
+        code: 404,
+        status: "Contact not found",
+      });
+    }
+
+    res.status(200).json({
+      code: 200,
+      status: "Success",
+      data: { contact: patchedContact },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
