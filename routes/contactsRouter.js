@@ -1,29 +1,28 @@
 import express from "express";
-import contactsControllers from "../controllers/contactsControllers.js";
-import validateBody from "../helpers/validateBody.js";
+
 import {
-  createContactSchema,
-  updateContactSchema,
-} from "../schemas/contactsSchemas.js";
+  validateContactCreation,
+  validateContactUpdate,
+  validateFavoritePatch,
+} from "../middlewares/contactValidate.js";
 
-const contactsRouter = express.Router();
+import {
+  getAllContacts,
+  getOneContact,
+  deleteContact,
+  createContact,
+  updateContact,
+  patchContact,
+} from "../controllers/contactsControllers.js";
 
-contactsRouter.get("/", contactsControllers.getAllContacts);
+const router = express.Router();
 
-contactsRouter.get("/:id", contactsControllers.getOneContact);
+router.get("/", getAllContacts);
+router.get("/:id", getOneContact);
+router.delete("/:id", deleteContact);
 
-contactsRouter.delete("/:id", contactsControllers.deleteContact);
+router.post("/", validateContactCreation, createContact);
+router.put("/:id", validateContactUpdate, updateContact);
+router.patch("/:id/favorite", validateFavoritePatch, patchContact);
 
-contactsRouter.post(
-  "/",
-  validateBody(createContactSchema),
-  contactsControllers.createContact
-);
-
-contactsRouter.put(
-  "/:id",
-  validateBody(updateContactSchema),
-  contactsControllers.updateContact
-);
-
-export default contactsRouter;
+export default router;
