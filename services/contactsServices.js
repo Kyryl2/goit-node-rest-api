@@ -1,7 +1,17 @@
 import Contact from "../schemas/contact.js";
 
-export const getAllContacts = () => {
-  return Contact.find();
+export const getAllContacts = async ({ page, limit, favorite }) => {
+  const skip = (page - 1) * limit;
+  const filter = favorite !== undefined ? { favorite } : {};
+
+  const [contacts, totalCount] = await Promise.all([
+    Contact.find(filter).skip(skip).limit(limit),
+    Contact.countDocuments(filter),
+  ]);
+
+  const totalPages = Math.ceil(totalCount / limit);
+
+  return { contacts, totalPages };
 };
 
 export const getOneContact = (id) => {

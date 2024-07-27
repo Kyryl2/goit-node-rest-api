@@ -2,7 +2,16 @@ import * as contactService from "../services/contactsService.js";
 
 export const getAllContacts = async (req, res, next) => {
   try {
-    const listedContacts = await contactService.getAllContacts();
+    const { page = 1, limit = 20, favorite } = req.query;
+    const paginationOptions = {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      favorite: favorite !== undefined ? favorite === "true" : undefined,
+    };
+
+    const listedContacts = await contactService.getAllContacts(
+      paginationOptions
+    );
 
     if (!listedContacts || listedContacts.length === 0) {
       return res.status(404).json({
