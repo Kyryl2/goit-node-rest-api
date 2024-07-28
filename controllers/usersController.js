@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../schemas/user.js";
+import Jimp from "jimp";
 
 export const register = async (req, res, next) => {
   try {
@@ -103,6 +104,28 @@ export const updateUserSubscription = async (req, res, next) => {
       subscription: updatedUser.subscription,
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const patchAvatarUser = async (req, res, next) => {
+  try {
+    const { path: oldPath, filename } = req.file;
+    const { id } = req.user;
+    const newPath = path.join(avatarsPath, filename);
+    console.log(newPath);
+    await fs.rename(oldPath, newPath);
+
+    await Jimp.read(newPath).then((img) => img.resize(250, 250));
+
+    const avatarURL = path.join("avatars", filename);
+    authServices.updateUser({ _id: id }, { avatarURL });
+
+    res.status(200).json({
+      avatarURL: `/avatars/${filename}`,
+    });
+  } catch (error) {
+    console.error(error);
     next(error);
   }
 };

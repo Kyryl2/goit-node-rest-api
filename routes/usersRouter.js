@@ -5,6 +5,7 @@ import {
   logout,
   getCurrent,
   updateUserSubscription,
+  patchAvatarUser,
 } from "../controllers/usersController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import {
@@ -12,6 +13,7 @@ import {
   validateUserLogin,
   validateSubscriptionUpdate,
 } from "../middlewares/userValidate.js";
+import upload from "../middlewares/upload.js";
 
 const router = express.Router();
 
@@ -25,5 +27,10 @@ router.patch(
   validateSubscriptionUpdate,
   updateUserSubscription
 );
-
+router.patch(
+  "/avatar",
+  upload.single("avatar"),
+  authMiddleware,
+  patchAvatarUser
+);
 export default router;
