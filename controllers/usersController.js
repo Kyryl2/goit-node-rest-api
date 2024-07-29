@@ -2,6 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../schemas/user.js";
 import Jimp from "jimp";
+import { nanoid } from "nanoid";
+import sendEmail from "../utils/sendEmail.js";
+import * as authServices from "../services/usersService.js";
+const { JWT_SECRET, BASE_URL } = process.env;
 
 export const register = async (req, res, next) => {
   try {
@@ -13,8 +17,19 @@ export const register = async (req, res, next) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ email, password: hashedPassword });
+    const verificationToken = nanoid();
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      verificationToken,
+    });
+    const verifyEmail = {
+      to: email,
+      subject: "Please verify your email",
+      html: `<a target="_blank" href="${BASE_URL}/api/users/verify/${verificationToken}">Click here to verify your email</a>`,
+    };
 
+    await sendEmail(verifyEmail);
     res.status(201).json({
       user: {
         email: newUser.email,
@@ -26,6 +41,48 @@ export const register = async (req, res, next) => {
   }
 };
 
+export const verify = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await authServices.findUserByEmail({ verificationToken });
+  if (!user) {
+    throw HttpError(404, "User not found or already verify");
+  }
+  await authServices.updateUser(
+    { _id: user._id },
+    { verify: true, verificationToken: "" }
+  );
+  res.json({
+    Status: "200 OK",
+    ResponseBody: {
+      message: "Verification successfull",
+    },
+  });
+};
+
+export const resendVerify = async (req, res) => {
+  const { email } = req.body;
+  const user = await authServices.findUserByEmail({ email });
+
+  if (!user) {
+    throw httpError(404, "Email not found");
+  }
+  if (user.verify) {
+    throw httpError(400, "Email already verify");
+  }
+
+  const verifyEmail = {
+    to: email,
+    subject: "Please verify your email",
+    html: `<a target="_blank" href="${BASE_URL}/api/users/verify/${user.verificationToken}">Click here to verify your email</a>`,
+  };
+
+  await sendEmail(verifyEmail);
+
+  res.json({
+    message: "Verify email resend successfully",
+  });
+};
+
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -34,8 +91,11 @@ export const login = async (req, res, next) => {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: "Email or password is wrong" });
     }
+    if (!user.verify) {
+      return res.status(401).json({ message: "Email not verify" });
+    }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
       expiresIn: "1h",
     });
     user.token = token;

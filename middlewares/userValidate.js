@@ -43,3 +43,9 @@ export const validateSubscriptionUpdate = (req, res, next) => {
   }
   next();
 };
+
+export const authEmailSchema = () => {
+  Joi.object({
+    email: Joi.string().email().required(),
+  });
+};
