@@ -3,6 +3,8 @@ import {
   register,
   login,
   logout,
+  verify,
+  resendVerify,
   getCurrent,
   updateUserSubscription,
   patchAvatarUser,
@@ -11,11 +13,14 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 import {
   validateUserRegistration,
   validateUserLogin,
+  authEmailSchema,
   validateSubscriptionUpdate,
 } from "../middlewares/userValidate.js";
 import upload from "../middlewares/upload.js";
 
 const router = express.Router();
+router.get("/verify/:verificationToken", verify);
+router.post("/verify", authEmailSchema, resendVerify);
 
 router.post("/register", validateUserRegistration, register);
 router.post("/login", validateUserLogin, login);

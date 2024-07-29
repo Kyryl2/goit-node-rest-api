@@ -9,3 +9,5 @@ export const createUser = ({ username, email, password }) => {
   newUser.setPassword(password);
   return newUser.save();
 };
+
+export const updateUser = (filter, data) => User.findOneAndUpdate(filter, data);
